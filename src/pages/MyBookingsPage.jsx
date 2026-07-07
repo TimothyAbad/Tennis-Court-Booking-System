@@ -19,7 +19,26 @@ function formatTime(start, end) {
 }
 
 export function MyBookingsPage() {
-  const { bookings, cancelBooking } = useBookings()
+  const { bookings, loading, error, cancelBooking } = useBookings()
+
+  if (loading) {
+    return (
+      <div className="space-y-3">
+        <div className="h-6 w-32 bg-gray-200 rounded animate-pulse mb-6" />
+        {[1, 2, 3].map(i => (
+          <div key={i} className="bg-white rounded-xl border border-gray-200 p-4 h-20 animate-pulse" />
+        ))}
+      </div>
+    )
+  }
+
+  if (error) {
+    return (
+      <div className="text-center py-16">
+        <p className="text-red-500 text-sm">Failed to load bookings. Please refresh.</p>
+      </div>
+    )
+  }
 
   const sorted = [...bookings].sort((a, b) => {
     if (a.date !== b.date) return b.date.localeCompare(a.date)

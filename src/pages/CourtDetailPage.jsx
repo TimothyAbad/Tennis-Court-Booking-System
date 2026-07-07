@@ -6,7 +6,6 @@ import { DatePicker } from '../components/booking/DatePicker'
 import { TimeSlotGrid } from '../components/booking/TimeSlotGrid'
 import { BookingModal } from '../components/booking/BookingModal'
 import { CourtBadge } from '../components/courts/CourtBadge'
-import { Button } from '../components/shared/Button'
 
 const surfaceBg = { Hard: 'bg-blue-100', Clay: 'bg-orange-100', Grass: 'bg-green-100' }
 const surfaceIcon = { Hard: '🏟️', Clay: '🟫', Grass: '🌿' }
@@ -22,6 +21,7 @@ export function CourtDetailPage() {
   const [selectedSlot, setSelectedSlot] = useState(null)
   const [showModal, setShowModal] = useState(false)
   const [confirmation, setConfirmation] = useState(null)
+  const [bookingError, setBookingError] = useState(null)
 
   const court = courts.find((c) => c.id === courtId)
   if (!court) {
@@ -39,20 +39,26 @@ export function CourtDetailPage() {
     setSelectedSlot(slot)
     setShowModal(true)
     setConfirmation(null)
+    setBookingError(null)
   }
 
-  function handleConfirm(guestData) {
-    const booking = createBooking({
-      courtId: court.id,
-      courtName: court.name,
-      date,
-      startTime: selectedSlot.startTime,
-      endTime: selectedSlot.endTime,
-      ...guestData,
-    })
-    setShowModal(false)
-    setConfirmation(booking)
-    setSelectedSlot(null)
+  async function handleConfirm(guestData) {
+    try {
+      const booking = await createBooking({
+        courtId: court.id,
+        courtName: court.name,
+        date,
+        startTime: selectedSlot.startTime,
+        endTime: selectedSlot.endTime,
+        ...guestData,
+      })
+      setShowModal(false)
+      setConfirmation(booking)
+      setSelectedSlot(null)
+    } catch (err) {
+      setBookingError(err.message || 'Failed to save booking. Please try again.')
+      console.error(err)
+    }
   }
 
   return (
@@ -91,6 +97,12 @@ export function CourtDetailPage() {
               View my bookings →
             </button>
           </div>
+        </div>
+      )}
+
+      {bookingError && (
+        <div className="mb-4 bg-red-50 border border-red-200 rounded-lg p-3 text-sm text-red-700">
+          {bookingError}
         </div>
       )}
 

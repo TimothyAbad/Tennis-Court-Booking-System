@@ -1,47 +1,62 @@
-const STORAGE_KEY = 'tennis_bookings'
+import { api } from '../lib/api'
 
-function load() {
-  try {
-    return JSON.parse(localStorage.getItem(STORAGE_KEY)) ?? []
-  } catch {
-    return []
+function toJs(row) {
+  return {
+    id: row.id,
+    userId: row.user_id,
+    courtId: row.court_id,
+    courtName: row.court_name,
+    date: row.date,
+    startTime: row.start_time,
+    endTime: row.end_time,
+    guestName: row.guest_name,
+    guestPhone: row.guest_phone,
+    status: row.status,
+    createdAt: row.created_at,
   }
 }
 
-function save(bookings) {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(bookings))
+function toDb(booking) {
+  return {
+    user_id: booking.userId,
+    court_id: booking.courtId,
+    court_name: booking.courtName,
+    date: booking.date,
+    start_time: booking.startTime,
+    end_time: booking.endTime,
+    guest_name: booking.guestName,
+    guest_phone: booking.guestPhone,
+    status: booking.status ?? 'confirmed',
+  }
 }
 
 export const bookingService = {
-  getAll() {
-    return load()
+  async getAll(authToken) {
+    const rows = await api.get('/bookings?order=date.desc,start_time.desc', authToken)
+    return (rows ?? []).map(toJs)
   },
 
-  getByCourtAndDate(courtId, date) {
-    return load().filter(
-      (b) => b.courtId === courtId && b.date === date && b.status === 'confirmed'
+  async getByCourtAndDate(courtId, date, authToken) {
+    const rows = await api.get(
+      `/bookings?court_id=eq.${courtId}&date=eq.${date}&status=eq.confirmed`,
+      authToken
     )
+    return (rows ?? []).map(toJs)
   },
 
-  create(data) {
-    const booking = {
-      id: crypto.randomUUID(),
-      ...data,
-      status: 'confirmed',
-      createdAt: new Date().toISOString(),
-    }
-    const bookings = load()
-    bookings.push(booking)
-    save(bookings)
-    return booking
+  async create(data, authToken) {
+    const rows = await api.post('/bookings', toDb(data), authToken)
+    const row = Array.isArray(rows) ? rows[0] : rows
+    return toJs(row)
   },
 
-  cancel(bookingId) {
-    const bookings = load()
-    const idx = bookings.findIndex((b) => b.id === bookingId)
-    if (idx === -1) return null
-    bookings[idx] = { ...bookings[idx], status: 'cancelled' }
-    save(bookings)
-    return bookings[idx]
+  async cancel(bookingId, authToken) {
+    const rows = await api.patch(
+      `/bookings?id=eq.${bookingId}`,
+      { status: 'cancelled' },
+      authToken
+    )
+    const row = Array.isArray(rows) ? rows[0] : rows
+    return toJs(row)
   },
 }

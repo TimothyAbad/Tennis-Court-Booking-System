@@ -1,6 +1,11 @@
 import { NavLink } from 'react-router-dom'
+import { authClient } from '../../lib/auth'
+import { Button } from '../shared/Button'
 
 export function Navbar() {
+  const { data: session } = authClient.useSession()
+  const user = session?.user
+
   const linkClass = ({ isActive }) =>
     `px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
       isActive
@@ -15,10 +20,21 @@ export function Navbar() {
           <span className="text-2xl">🎾</span>
           <span>CourtBook</span>
         </NavLink>
-        <nav className="flex items-center gap-1">
-          <NavLink to="/courts" className={linkClass}>Courts</NavLink>
-          <NavLink to="/bookings" className={linkClass}>My Bookings</NavLink>
-        </nav>
+        <div className="flex items-center gap-2">
+          {user && (
+            <>
+              <nav className="flex items-center gap-1">
+                <NavLink to="/courts" className={linkClass}>Courts</NavLink>
+                <NavLink to="/bookings" className={linkClass}>My Bookings</NavLink>
+              </nav>
+              <div className="w-px h-5 bg-gray-200 mx-1" />
+              <span className="text-sm text-gray-500 hidden sm:block">{user.email}</span>
+              <Button variant="ghost" className="text-sm" onClick={() => authClient.signOut()}>
+                Sign out
+              </Button>
+            </>
+          )}
+        </div>
       </div>
     </header>
   )
