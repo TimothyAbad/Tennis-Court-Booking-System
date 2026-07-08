@@ -1,10 +1,15 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { authClient } from '../lib/auth'
 import { Button } from '../components/shared/Button'
 
 export function SignInPage() {
   const navigate = useNavigate()
+  const { data: session } = authClient.useSession()
+
+  useEffect(() => {
+    if (session) navigate('/courts', { replace: true })
+  }, [session, navigate])
   const [tab, setTab] = useState('signin')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
